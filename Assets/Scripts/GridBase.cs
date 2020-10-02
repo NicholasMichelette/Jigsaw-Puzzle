@@ -18,6 +18,7 @@ public class GridBase : MonoBehaviour
             {
                 grid[i, j] = Instantiate(tilePrefab, this.gameObject.transform);
                 grid[i, j].transform.position = new Vector3(x_Start + i * 1.05f - .5f, y_Start + j * 1.05f - .5f, 0);
+                grid[i, j].layer = 8;
             }
         }
     }

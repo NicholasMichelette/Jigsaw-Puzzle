@@ -5,7 +5,6 @@ using UnityEngine;
 public class Piece : MonoBehaviour
 {
     public GameObject tilePrefab;
-    public float x_Start, y_Start;
     public GameObject[,] grid;
     public int rows, columns;
     public int pieceNum;

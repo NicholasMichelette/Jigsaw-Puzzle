@@ -6,6 +6,16 @@ public class ClickManager : MonoBehaviour
 {
     private Vector2 followOffset;
     private GameObject objFollowing;
+    private PieceManager pm;
+    private GridBase gb;
+
+    void Start()
+    {
+        pm = FindObjectOfType<PieceManager>();
+        gb = FindObjectOfType<GridBase>();
+    }
+
+
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -15,20 +25,61 @@ public class ClickManager : MonoBehaviour
             
             RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
             if (hit.collider != null) {
-                if (hit.collider.gameObject.GetComponent<Tile>() != null && hit.collider.gameObject.GetComponent<Tile>().pieceNum == 0)
+                Tile t = hit.collider.gameObject.GetComponent<Tile>();
+                if (t != null)
                 {
-                    hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.black;
-                    hit.collider.gameObject.GetComponent<Tile>().pieceNum = -1;
-                }
-                else if (hit.collider.gameObject.GetComponent<Tile>() != null && hit.collider.gameObject.GetComponent<Tile>().pieceNum == -1)
-                {
-                    hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
-                    hit.collider.gameObject.GetComponent<Tile>().pieceNum = 0;
-                }
-                else if (hit.collider.gameObject.GetComponent<Tile>() != null && hit.collider.gameObject.transform.parent.GetComponent<Piece>() != null)
-                {
-                    objFollowing = hit.collider.gameObject.transform.parent.gameObject;
-                    followOffset = new Vector2(mousePos2D.x - hit.collider.gameObject.transform.parent.position.x, mousePos2D.y - hit.collider.gameObject.transform.parent.position.y);
+                    if (t.pieceNum == 0)
+                    {
+                        hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.black;
+                        t.pieceNum = -1;
+                    }
+                    else if(t.pieceNum == -1)
+                    {
+                        hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+                        t.pieceNum = 0;
+                    }
+                    else if(t.pieceNum > 0)
+                    {
+                        if (hit.collider.gameObject.transform.parent.GetComponent<Piece>() != null)
+                        {
+                            objFollowing = hit.collider.gameObject.transform.parent.gameObject;
+                        }
+                        else if(hit.collider.gameObject.transform.parent.GetComponent<GridBase>() != null)
+                        {
+                            objFollowing = pm.activatePiece(t.pieceNum);
+
+                            Piece p = objFollowing.GetComponent<Piece>();
+                            for(int i = 0; i < p.columns; i++)
+                            {
+                                for(int j = 0; j < p.rows; j++)
+                                {
+                                    GameObject tileObj = p.grid[i, j];
+                                    if (tileObj.GetComponent<Tile>().pieceNum > 0)
+                                    {
+                                        Collider2D[] temp = Physics2D.OverlapBoxAll(tileObj.gameObject.transform.position, new Vector2(1, 1), 0, 1 << 8);
+                                        if (temp.Length > 0)
+                                        {
+                                            Tile t2 = temp[0].GetComponent<Tile>();
+                                            float dist = Vector2.Distance(tileObj.gameObject.transform.position, temp[0].gameObject.transform.position);
+                                            for (int k = 1; k < temp.Length; k++)
+                                            {
+                                                float tempD = Vector2.Distance(tileObj.gameObject.transform.position, temp[k].gameObject.transform.position);
+                                                if (dist > tempD)
+                                                {
+                                                    t2 = temp[k].GetComponent<Tile>();
+                                                    dist = tempD;
+                                                }
+                                            }
+
+                                            t2.pieceNum = 0;
+                                            t2.GetComponent<SpriteRenderer>().color = Color.white;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        followOffset = new Vector2(mousePos2D.x - objFollowing.transform.position.x, mousePos2D.y - objFollowing.transform.position.y);
+                    }
                 }
             }
         }
@@ -48,8 +99,60 @@ public class ClickManager : MonoBehaviour
         }
         if(Input.GetMouseButtonUp(0))
         {
-            objFollowing = null;
-            //tbd
+            if (objFollowing != null)
+            {
+                Piece p = objFollowing.GetComponent<Piece>();
+                List<Tile> tilesToChange = new List<Tile>();
+                bool fits = true;
+                Color c = new Color(0, 0, 0);
+                for(int i = 0; i < p.columns; i++)
+                {
+                    for(int j = 0; j < p.rows; j++)
+                    {
+                        Tile t = p.grid[i, j].GetComponent<Tile>();
+                        if (t.pieceNum > 0)
+                        {
+                            c = t.GetComponent<SpriteRenderer>().color;
+                            Collider2D[] temp = Physics2D.OverlapBoxAll(t.gameObject.transform.position, new Vector2(1, 1), 0, 1 << 8);
+                            if (temp.Length > 0)
+                            {
+                                Tile t2 = temp[0].GetComponent<Tile>();
+                                float dist = Vector2.Distance(t.gameObject.transform.position, temp[0].gameObject.transform.position);
+                                for (int k = 1; k < temp.Length; k++)
+                                {
+                                    float tempD = Vector2.Distance(t.gameObject.transform.position, temp[k].gameObject.transform.position);
+                                    if (dist > tempD)
+                                    {
+                                        t2 = temp[k].GetComponent<Tile>();
+                                        dist = tempD;
+                                    }
+                                }
+
+                                if (t2.pieceNum == 0)
+                                {
+                                    tilesToChange.Add(t2);
+                                }
+                                else
+                                    fits = false;
+                            }
+                            else
+                                fits = false;
+                        }
+                    }
+                    
+                }
+                if (fits)
+                {
+                    foreach (Tile t in tilesToChange)
+                    {
+                        t.pieceNum = p.pieceNum;
+                        t.GetComponent<SpriteRenderer>().color = c;
+                    }
+                    p.gameObject.SetActive(false);
+                }
+
+                objFollowing = null;
+            }
         }
         if(Input.GetMouseButtonDown(2))
         {
