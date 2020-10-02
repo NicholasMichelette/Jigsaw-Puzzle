@@ -83,6 +83,7 @@ public class ClickManager : MonoBehaviour
                 }
             }
         }
+
         if(objFollowing != null)
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -96,7 +97,13 @@ public class ClickManager : MonoBehaviour
             {
                 objFollowing.GetComponent<Piece>().flipY();
             }
+            if(Input.GetKeyDown("z"))
+            {
+                pm.removePiece(objFollowing);
+                objFollowing = null;
+            }
         }
+
         if(Input.GetMouseButtonUp(0))
         {
             if (objFollowing != null)
@@ -154,7 +161,7 @@ public class ClickManager : MonoBehaviour
                 objFollowing = null;
             }
         }
-        if(Input.GetMouseButtonDown(2))
+        if(Input.GetKeyUp(KeyCode.S))
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);

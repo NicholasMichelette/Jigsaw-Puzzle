@@ -56,4 +56,10 @@ public class PieceManager : MonoBehaviour
         }
         return p;
     }
+
+    public void removePiece(GameObject obj)
+    {
+        pieces.Remove(obj);
+        Destroy(obj);
+    }
 }
