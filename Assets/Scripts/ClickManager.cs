@@ -46,7 +46,7 @@ public class ClickManager : MonoBehaviour
                         }
                         else if(hit.collider.gameObject.transform.parent.GetComponent<GridBase>() != null)
                         {
-                            objFollowing = pm.activatePiece(t.pieceNum);
+                            objFollowing = pm.ActivatePiece(t.pieceNum);
 
                             Piece p = objFollowing.GetComponent<Piece>();
                             for(int i = 0; i < p.columns; i++)
@@ -99,7 +99,7 @@ public class ClickManager : MonoBehaviour
             }
             if(Input.GetKeyDown("z"))
             {
-                pm.removePiece(objFollowing);
+                pm.RemovePiece(objFollowing);
                 objFollowing = null;
             }
         }

@@ -75,4 +75,22 @@ public class Piece : MonoBehaviour
             }
         }
     }
+
+    public int[,] GetArrayRepresentation()
+    {
+        int[,] result = new int[columns, rows];
+
+        for(int i = 0; i < columns; i++)
+        {
+            for(int j = 0; j < rows; j++)
+            {
+                if (grid[i, j].GetComponent<Tile>().pieceNum > -1)
+                    result[i, j] = pieceNum;
+                else
+                    result[i, j] = -2;
+            }
+        }
+        
+        return result;
+    }
 }

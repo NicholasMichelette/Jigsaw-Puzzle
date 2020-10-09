@@ -22,4 +22,26 @@ public class GridBase : MonoBehaviour
             }
         }
     }
+
+    public void Resize(int x, int y)
+    {
+        foreach(GameObject g in grid)
+        {
+            Destroy(g);
+        }
+
+        columns = x;
+        rows = y;
+
+        grid = new GameObject[columns, rows];
+        for (int i = 0; i < columns; i++)
+        {
+            for (int j = 0; j < rows; j++)
+            {
+                grid[i, j] = Instantiate(tilePrefab, this.gameObject.transform);
+                grid[i, j].transform.position = new Vector3(x_Start + i * 1.05f - .5f, y_Start + j * 1.05f - .5f, 0);
+                grid[i, j].layer = 8;
+            }
+        }
+    }
 }
