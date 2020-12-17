@@ -8,6 +8,7 @@ public class Piece : MonoBehaviour
     public GameObject[,] grid;
     public int rows, columns;
     public int pieceNum;
+    public Color pieceColor;
 
     // Start is called before the first frame update
     void Start()
@@ -19,13 +20,14 @@ public class Piece : MonoBehaviour
             {
                 grid[i, j] = Instantiate(tilePrefab, this.gameObject.transform);
                 grid[i, j].transform.position = new Vector3(this.gameObject.transform.position.x + i * 1.05f - .5f, this.gameObject.transform.position.y + j * 1.05f - .5f, -1);
+                grid[i, j].GetComponent<SpriteRenderer>().sortingOrder = 1;
             }
         }
     }
 
     public void setPieces()
     {
-        Color c = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        pieceColor = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
         for (int i = 0; i < columns; i++)
         {
             for (int j = 0; j < rows; j++)
@@ -38,7 +40,7 @@ public class Piece : MonoBehaviour
                 else if (grid[i, j].GetComponent<Tile>().pieceNum == 0)
                 {
                     grid[i, j].GetComponent<Tile>().pieceNum = pieceNum;
-                    grid[i, j].GetComponent<SpriteRenderer>().color = c;
+                    grid[i, j].GetComponent<SpriteRenderer>().color = pieceColor;
                 }
             }
         }

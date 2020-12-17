@@ -1,8 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 public class PieceManager : MonoBehaviour
 {
@@ -47,6 +50,7 @@ public class PieceManager : MonoBehaviour
             p.columns = cols;
             p.pieceNum = pn;
             pieces.Add(o);
+            o.transform.position = new Vector3(o.transform.position.x, o.transform.position.y, o.transform.position.z + 1);
         }
     }
 
@@ -78,39 +82,195 @@ public class PieceManager : MonoBehaviour
 
         //sort list by length (col length)
         tempPieces.Sort(SortByLength);
+        int[] rowNums = new int[tempPieces.Count];
+        int[] colNums = new int[tempPieces.Count];
 
         //add each possible orientation (flips)
         List<int[,]>[] l = new List<int[,]>[tempPieces.Count];
-        for(int i = 0; i < tempPieces.Count; i++)
+        List<int>[] offset = new List<int>[tempPieces.Count];
+
+        for (int i = 0; i < tempPieces.Count; i++)
         {
             Piece p = tempPieces[i].GetComponent<Piece>();
             l[i] = new List<int[,]>();
+            offset[i] = new List<int>();
+            rowNums[i] = p.rows;
+            colNums[i] = p.columns;
 
             int[,] rep = p.GetArrayRepresentation();
-            //ArrToString(rep, p.rows, p.columns);
             l[i].Add(rep);
+            offset[i].Add(FindOffset(rep, p.rows, p.columns));
+
             int[,] tempRep = FlipX(rep, p.rows, p.columns);
-            //ArrToString(tempRep, p.rows, p.columns);
             if (!AlreadyExists(l[i], tempRep, p.rows, p.columns))
+            {
                 l[i].Add(tempRep);
+                offset[i].Add(FindOffset(tempRep, p.rows, p.columns));
+            }
+
             tempRep = FlipY(rep, p.rows, p.columns);
-            //ArrToString(tempRep, p.rows, p.columns);
             if (!AlreadyExists(l[i], tempRep, p.rows, p.columns))
+            {
                 l[i].Add(tempRep);
+                offset[i].Add(FindOffset(tempRep, p.rows, p.columns));
+            }
+
             tempRep = FlipX(FlipY(rep, p.rows, p.columns), p.rows, p.columns);
-            //ArrToString(tempRep, p.rows, p.columns);
             if (!AlreadyExists(l[i], tempRep, p.rows, p.columns))
+            {
                 l[i].Add(tempRep);
-            Debug.Log(l[i].Count);
-
-
+                offset[i].Add(FindOffset(tempRep, p.rows, p.columns));
+            }
         }
+
+        //have array keep track of which iteration of each piece is being used and the location
+        int[] whichFlip = new int[l.Length];
+        int[] placedX = new int[l.Length];
+        int[] placedY = new int[l.Length];
+        for(int i = 0; i < l.Length; i++)
+        {
+            placedX[i] = -2;
+            placedY[i] = 0;
+        }
+        int[,] gi = gb.GetIntArr();
+
+        
 
         // END SETUP
 
 
-
         // ALGORITHM
+        //loop goes through the pieces
+
+        int a = 0;
+        bool stop = false;
+        while(a < l.Length && !stop)
+        {
+            bool placed = false;
+            //l[k][whichFlip[k]];
+            //loop that goes through each iteration of piece
+            int b = whichFlip[a];
+            while (b < l[a].Count && !placed)
+            {
+                //loop that tries to place the piece
+                //for each tile in grid, attempt to place piece
+                int d = placedX[a] + 2;
+                int c = placedY[a];
+                while (c < gb.rows && !placed)
+                {
+                    while(d < gb.columns && !placed)
+                    {
+                        if(gi[d, c] == 0)
+                        {
+                            bool canPlace = true;
+                            for(int i = offset[a][b]; i < rowNums[a] && canPlace; i++)
+                            {
+                                for(int j = 0; j < colNums[a] && canPlace; j++)
+                                {
+                                    if (l[a][b][j, i] > 0)
+                                    {
+                                        if (gb.rows - 1 < c + i - offset[a][b] || gb.columns - 1 < d + j)
+                                            canPlace = false;
+                                        else if (gi[d + j, c + i - offset[a][b]] != 0)
+                                            canPlace = false;
+                                    }
+                                }
+                            }
+
+                            for (int i = offset[a][b] - 1; i >= 0 && canPlace; i--)
+                            {
+                                for (int j = 0; j < colNums[a] && canPlace; j++)
+                                {
+                                    if (l[a][b][j, i] > 0)
+                                    {
+                                        if ((0 > c + i - offset[a][b] || gb.columns - 1 < d + j))
+                                            canPlace = false;
+                                        else if (gi[d + j, c + i - offset[a][b]] != 0)
+                                            canPlace = false;
+                                    }
+                                }
+                            }
+
+                            if(canPlace)
+                            {
+                                placed = true;
+                                placedX[a] = d;
+                                placedY[a] = c;
+                                whichFlip[a] = b;
+
+                                for (int i = offset[a][b]; i < rowNums[a] && canPlace; i++)
+                                {
+                                    for (int j = 0; j < colNums[a]; j++)
+                                    {
+                                        if (l[a][b][j, i] > 0)
+                                        {
+                                            int tempNum = tempPieces[a].GetComponent<Piece>().pieceNum;
+                                            gi[d + j, c + i - offset[a][b]] = tempNum;
+                                            gb.grid[d + j, c + i - offset[a][b]].GetComponent<Tile>().pieceNum = tempNum;
+                                            gb.grid[d + j, c + i - offset[a][b]].GetComponent<SpriteRenderer>().color = tempPieces[a].GetComponent<Piece>().pieceColor;
+                                        }
+                                    }
+                                }
+
+                                for (int i = offset[a][b] - 1; i >= 0 && canPlace; i--)
+                                {
+                                    for (int j = 0; j < colNums[a] && canPlace; j++)
+                                    {
+                                        if (l[a][b][j, i] > 0)
+                                        {
+                                            int tempNum = tempPieces[a].GetComponent<Piece>().pieceNum;
+                                            gi[d + j, c + i - offset[a][b]] = tempNum;
+                                            gb.grid[d + j, c + i - offset[a][b]].GetComponent<Tile>().pieceNum = tempNum;
+                                            gb.grid[d + j, c + i - offset[a][b]].GetComponent<SpriteRenderer>().color = tempPieces[a].GetComponent<Piece>().pieceColor;
+                                        }
+                                    }
+                                }
+                            }
+
+
+                        }
+                        d += 2;
+                    }
+                    c++;
+                    if (c % 2 == 0)
+                        d = 0;
+                    else
+                        d = 1;
+                    if(!placed)
+                    {
+                        placedX[a] = -2;
+                        placedY[a] = 0;
+                    }
+                }
+                b++;
+            }
+            if (placed)
+                a++;
+            else if (a > 0)
+            {
+                whichFlip[a] = 0;
+                placedX[a] = -2;
+                placedY[a] = 0;
+                a--;
+                //unplaces a piece, looks for any tile with the piece number through the entire grid
+                for (int i = 0; i < gb.rows; i++)
+                {
+                    for (int j = 0; j < gb.columns; j++)
+                    {
+                        Tile t = gb.grid[j, i].GetComponent<Tile>();
+                        if (t.pieceNum == tempPieces[a].GetComponent<Piece>().pieceNum)
+                        {
+                            t.pieceNum = 0;
+                            gb.grid[j, i].GetComponent<SpriteRenderer>().color = Color.white;
+                            gi[j, i] = 0;
+                        }
+                    }
+                }
+            }
+            else
+                stop = true;
+        }
+        
     }
 
     static int SortByLength(GameObject g1, GameObject g2)
@@ -190,6 +350,23 @@ public class PieceManager : MonoBehaviour
         return result;
     }
 
+    static int FindOffset(int[,] arr, int rows, int cols)
+    {
+        int result = 0;
+        bool cont = true;
+
+        for(int i = 0; i < rows && cont; i++)
+        {
+            if(arr[0, i] > 0)
+            {
+                cont = false;
+                result = i;
+            }
+        }
+
+        return result;
+    }
+
     // FOR DEBUGGING PURPOSES ONLY  
     static void ArrToString(int[,] arr, int rows, int cols)
     {
@@ -208,5 +385,10 @@ public class PieceManager : MonoBehaviour
     public void Exit()
     {
         Application.Quit();
+    }
+
+    public void Reset()
+    {
+        SceneManager.LoadScene("Puzzle_Solver");
     }
 }

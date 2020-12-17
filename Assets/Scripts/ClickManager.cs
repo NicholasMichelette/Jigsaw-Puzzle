@@ -8,11 +8,16 @@ public class ClickManager : MonoBehaviour
     private GameObject objFollowing;
     private PieceManager pm;
     private GridBase gb;
+    private int changeTo;
+    private Color changeToColor;
 
     void Start()
     {
         pm = FindObjectOfType<PieceManager>();
         gb = FindObjectOfType<GridBase>();
+
+        changeTo = -10;
+        changeToColor = Color.red;
     }
 
 
@@ -22,8 +27,9 @@ public class ClickManager : MonoBehaviour
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
-            
+
             RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
+
             if (hit.collider != null) {
                 Tile t = hit.collider.gameObject.GetComponent<Tile>();
                 if (t != null)
@@ -32,11 +38,15 @@ public class ClickManager : MonoBehaviour
                     {
                         hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.black;
                         t.pieceNum = -1;
+                        changeTo = -1;
+                        changeToColor = Color.black;
                     }
                     else if(t.pieceNum == -1)
                     {
                         hit.collider.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
                         t.pieceNum = 0;
+                        changeTo = 0;
+                        changeToColor = Color.white;
                     }
                     else if(t.pieceNum > 0)
                     {
@@ -84,7 +94,7 @@ public class ClickManager : MonoBehaviour
             }
         }
 
-        if(objFollowing != null)
+        if (objFollowing != null)
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
@@ -93,14 +103,30 @@ public class ClickManager : MonoBehaviour
             {
                 objFollowing.GetComponent<Piece>().flipX();
             }
-            if(Input.GetKeyDown("r"))
+            if (Input.GetKeyDown("r"))
             {
                 objFollowing.GetComponent<Piece>().flipY();
             }
-            if(Input.GetKeyDown("z"))
+            if (Input.GetKeyDown("z"))
             {
                 pm.RemovePiece(objFollowing);
                 objFollowing = null;
+            }
+        }
+        else if (Input.GetMouseButton(0) && changeTo != -10)
+        {
+            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 mousePos2D = new Vector2(mousePos.x, mousePos.y);
+
+            RaycastHit2D hit = Physics2D.Raycast(mousePos2D, Vector2.zero);
+
+            if (hit.collider != null)
+            {
+                if (hit.collider.gameObject.GetComponent<Tile>().pieceNum < 1 && hit.collider.gameObject.GetComponent<Tile>().pieceNum > -2)
+                {
+                    hit.collider.gameObject.GetComponent<SpriteRenderer>().color = changeToColor;
+                    hit.collider.gameObject.GetComponent<Tile>().pieceNum = changeTo;
+                }
             }
         }
 
@@ -159,8 +185,10 @@ public class ClickManager : MonoBehaviour
                 }
 
                 objFollowing = null;
+                changeTo = -10;
             }
         }
+
         if(Input.GetKeyUp(KeyCode.S))
         {
             Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
