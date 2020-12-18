@@ -1240,7 +1240,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &582813468
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1494,9 +1494,9 @@ MonoBehaviour:
     on canvas means you can place a piece there.\nWhite boxes on a piece dictate
     where the blocks will go.\nHover over a piece with your cursor and press S to
     solidify \nand color the piece.\n\nHold left click + drag on a colored piece
-    to move it around.\nWhile holding a piece, press R to flip the piece over the
-    X axis,\nor F to flip over the Y axis.\nWhile holding a piece, press Z to delete
-    the piece. \nRelease left click to place down the piece.\n\n"
+    to move it around.\nWhile holding a piece, press R to flip the rows,\nor F to
+    flip the columns.\nWhile holding a piece, press Z to delete the piece. \nRelease
+    left click to place down the piece.\n\n"
 --- !u!222 &708604835
 CanvasRenderer:
   m_ObjectHideFlags: 0
